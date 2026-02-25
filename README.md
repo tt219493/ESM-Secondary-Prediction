@@ -21,6 +21,8 @@ There were some issues with the `.fasta` file provided, namely that only one seq
 
 This pre-processing was also repeated for the test set.
 
+---
+
 ### Using ESM Model
 [Pre-trained ESM Model](https://huggingface.co/facebook/esm2_t6_8M_UR50D) using 6 layers and 8M parameters was imported from `HuggingFace` which is the smallest and most lightweight version provided. 
 The corresponding tokenizer was also imported and the windowed data was tokenized prior to model input.
@@ -34,6 +36,8 @@ The corresponding tokenizer was also imported and the windowed data was tokenize
 
 Overall, prediction accuracy from the best models was 60+%
 
+---
+
 ### Using Gradient Boosting
 Instead of using the fine-tuned ESM model predictions directly, the embeddings from the final layer of the ESM model were then used as features of a gradient boosted model, such as CatBoost or XGBoost. 
 Different gradient boosting models were trained using the embeddings from different ESM models.
@@ -41,6 +45,8 @@ Different gradient boosting models were trained using the embeddings from differ
 * **Results:** The gradient boosting model that performed the best was the XGBoost Classifier. Similar to the ESM model fine-tuning, the best results came from embeddings of ESM models with larger windows or combined datasets. It also similarly improved when ensembling the results of the best XGBoost models.  
 
 Overall, prediction accuracy increased further to 65+%.
+
+---
 
 Possible Improvements
 ---
