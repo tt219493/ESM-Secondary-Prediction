@@ -24,7 +24,7 @@ This pre-processing was also repeated for the test set.
 ---
 
 ### Using ESM Model
-[Pre-trained ESM Model](https://huggingface.co/facebook/esm2_t6_8M_UR50D) using 6 layers and 8M parameters was imported from `HuggingFace` which is the smallest and most lightweight version provided. 
+[Pre-trained ESM2 Model](https://huggingface.co/facebook/esm2_t6_8M_UR50D) using 6 layers and 8M parameters was imported from `HuggingFace` which is the smallest and most lightweight version provided. This model was imported for use in Token Classification.  
 The corresponding tokenizer was also imported and the windowed data was tokenized prior to model input.
 
 * **Training & Fine-tuning:** 5-fold cross validation was utilized with one version having 5 different models while the other version had one model train on each fold.
@@ -54,7 +54,7 @@ Possible Improvements
   * I believe this can result in the biggest improvement and will be easier to implement due to my new package [`ids-to-dssp`](https://github.com/tt219493/ids-to-dssp)
 * Since memory and speed of training was a limitation, the smallest pre-trained ESM model was used, so using a bigger model with more layers and parameters could improve results.
 * More extensive hyperparameter searching could also result in better results.
-* Improving on model architecture / pipeline can also result in improvements but the first three points are easier to implement and might yield better results.
+* Improving on model architecture / pipeline can also result in improvements by using similar models to those tested before.
 
 Notebook Summary
 ---
