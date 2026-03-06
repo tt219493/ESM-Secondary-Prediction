@@ -119,5 +119,38 @@ def create_aggregated_windows(df: pl.LazyFrame, window_sizes: list[int], has_ove
     temp_df = temp_df.unique(['id', 'asym_id','sequence', 'label', 'index'])
     return temp_df
 
+def train_val_split(df, n: int, offset: int=0):
+    '''
+    Deterministic split of LazyFrame using IDs. 
+
+    Parameters
+    ---
+    df
+        Polars LazyFrame
+    n: int
+        Fraction of validation (example: n=5 is 0.2)
+    offset: int=0
+        Starting index to gather
+
+    Returns
+    ---
+    tuple(LazyFrame, LazyFrame)
+        Full LazyFrames split as (train_split, test_split)
+
+
+    '''
+    ids = df.select('id').unique('id').sort('id')
+    val_ids = ids.gather_every(n=n, offset=offset)
+
+    train_ids = val_ids.clear()
+    for i in range(0, n):
+        if i != offset:
+            train_ids = pl.concat([train_ids, ids.gather_every(n=n, offset=i)])
+
+    train_split = df.join(train_ids, on=['id'], how='inner')
+    val_split = df.join(val_ids, on=['id'], how='inner')
+
+    return train_split, val_split
+
 
 
