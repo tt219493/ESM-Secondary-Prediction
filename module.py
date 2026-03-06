@@ -4,8 +4,6 @@ import torch
 from torchmetrics.functional import accuracy
 from torch import optim
 
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
 class EsmForSecondaryStructure(L.LightningModule):
   def __init__(self,
                num_labels: int = 10,
@@ -27,8 +25,7 @@ class EsmForSecondaryStructure(L.LightningModule):
                                                            num_labels=num_labels,
                                                            dtype="auto").train()
     if ckpt_path:
-      sd = torch.load(ckpt_path,
-                      map_location=device)['state_dict']
+      sd = torch.load(ckpt_path)['state_dict']
       sd = {k[6:] : sd[k] for k in sd.keys()}
       self.model.load_state_dict(sd)
 
@@ -131,6 +128,7 @@ class EsmForSecondaryStructure(L.LightningModule):
     self.log("test_accuracy", acc, on_step=False, on_epoch=True, prog_bar=True)
 
   def predict_step(self, batch, batch_idx):
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     with torch.no_grad():
         outputs = self.model(
             torch.tensor(batch[self.input_key]).reshape(1, -1).to(device),
