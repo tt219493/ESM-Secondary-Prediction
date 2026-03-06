@@ -60,7 +60,7 @@ class EsmForSecondaryStructure(L.LightningModule):
         ]
         
     if len(true_labels) == 0:
-      acc = torch.tensor(1.0)
+      acc = None
     else:
       acc = self.accuracy(
           torch.tensor(true_predictions),
@@ -88,13 +88,12 @@ class EsmForSecondaryStructure(L.LightningModule):
     self.log("train_loss", outputs[self.loss_key], on_step=False, on_epoch=True, prog_bar=True)
 
     logits = outputs[self.output_key]
-
     predictions = torch.argmax(logits, 2)
     labels = batch[self.label_key]
 
     acc = self.compute_accuracy(predictions, labels)
-
-    self.log("train_accuracy", acc, on_step=False, on_epoch=True, prog_bar=True)
+    if acc:
+      self.log("train_accuracy", acc, on_step=False, on_epoch=True, prog_bar=True)
 
     return outputs[self.loss_key]
 
@@ -107,14 +106,14 @@ class EsmForSecondaryStructure(L.LightningModule):
     )
 
     self.log("val_loss", outputs[self.loss_key], on_step=False, on_epoch=True, prog_bar=True)
+    
     logits = outputs[self.output_key]
-
     predictions = torch.argmax(logits, 2)
     labels = batch[self.label_key]
 
     acc = self.compute_accuracy(predictions, labels)
-
-    self.log("val_accuracy", acc, on_step=False, on_epoch=True, prog_bar=True)
+    if acc:
+      self.log("val_accuracy", acc, on_step=False, on_epoch=True, prog_bar=True)
 
   def test_step(self, batch, batch_idx):
     outputs = self.model(
@@ -126,12 +125,12 @@ class EsmForSecondaryStructure(L.LightningModule):
     self.log("test_loss", outputs[self.loss_key], on_step=False, on_epoch=True, prog_bar=True)
 
     logits = outputs[self.output_key]
-
     predictions = torch.argmax(logits, 2)
     labels = batch[self.label_key]
 
     acc = self.compute_accuracy(predictions, labels)
-    self.log("test_accuracy", acc, on_step=False, on_epoch=True, prog_bar=True)
+    if acc:
+      self.log("test_accuracy", acc, on_step=False, on_epoch=True, prog_bar=True)
 
   def predict_step(self, batch, batch_idx):
     with torch.no_grad():
