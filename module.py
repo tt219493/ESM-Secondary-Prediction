@@ -58,13 +58,16 @@ class EsmForSecondaryStructure(L.LightningModule):
         true_labels = true_labels + [
             l for l in label if l != -100
         ]
-    
-    acc = self.accuracy(
-        torch.tensor(true_predictions),
-        torch.tensor(true_labels),
-        num_classes=self.num_labels,
-        task="multiclass", 
-    )
+        
+    if len(true_labels) == 0:
+      acc = torch.tensor(1.0)
+    else:
+      acc = self.accuracy(
+          torch.tensor(true_predictions),
+          torch.tensor(true_labels),
+          num_classes=self.num_labels,
+          task="multiclass", 
+      )
 
     return acc
 
