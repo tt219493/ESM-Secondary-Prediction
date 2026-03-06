@@ -25,7 +25,8 @@ class EsmForSecondaryStructure(L.LightningModule):
                                                            num_labels=num_labels,
                                                            dtype="auto").train()
     if ckpt_path:
-      sd = torch.load(ckpt_path)['state_dict']
+      device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+      sd = torch.load(ckpt_path, map_location=device)['state_dict']
       sd = {k[6:] : sd[k] for k in sd.keys()}
       self.model.load_state_dict(sd)
 
