@@ -20,7 +20,7 @@ class EsmDataModule(L.LightningDataModule):
         if stage == "fit":
             self.train_ds = Dataset.from_polars(self.train_df.select(['input_ids', 'attention_mask', 'label']).collect())
             
-            if self.val_df:
+            if self.val_df is not None:
                 self.val_ds = Dataset.from_polars(self.val_df.select(['input_ids', 'attention_mask', 'label']).collect())
             else:
                 self.train_ds, self.val_ds = random_split(self.train_ds, [0.8, 0.2], 
