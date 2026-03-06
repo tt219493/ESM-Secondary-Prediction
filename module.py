@@ -71,7 +71,7 @@ class EsmForSecondaryStructure(L.LightningModule):
         batch[self.input_key],
         attention_mask=batch[self.mask_key],
     )
-    return outputs
+    return outputs[self.output_key] # return logits
 
   def training_step(self, batch, batch_idx):
     outputs = self.model(
@@ -127,6 +127,24 @@ class EsmForSecondaryStructure(L.LightningModule):
 
     acc = self.compute_accuracy(predictions, labels)
     self.log("test_accuracy", acc, on_step=False, on_epoch=True, prog_bar=True)
+
+  def predict_step(self, batch, batch_idx):
+    with torch.no_grad():
+        outputs = self.model(
+            torch.tensor(batch[self.input_key]).reshape(1, -1),
+            attention_mask=torch.tensor(batch[self.mask_key]).reshape(1, -1),
+        )
+        logits = outputs[self.output_key]
+        predictions = torch.argmax(logits, 2)
+
+    return {
+       'id' : batch['id'][0],
+       'asym_id' : batch['asym_id'][0],
+       'sequence' : batch['sequence'][0],
+       'index' : torch.tensor(batch['index']).tolist(),
+       'label' : torch.tensor(batch['label']).tolist(),
+       'prediction' : predictions.flatten().tolist()
+    }
 
 
   def configure_optimizers(self):

@@ -15,14 +15,18 @@ class EsmDataModule(L.LightningDataModule):
 
     def prepare_data(self):
         self.train_ds = Dataset.from_polars(self.train_df.select(['input_ids', 'attention_mask', 'label']).collect())
-        self.test_ds = Dataset.from_polars(self.test_df.select(['input_ids', 'attention_mask', 'label']).collect())
+        self.predict_ds = Dataset.from_polars(self.test_df.collect())
+        self.test_ds = self.predict_ds.remove_columns(['id', 'asym_id', 'sequence', 'index'])
     
     def setup(self, stage: str):
         if stage == "fit":
             self.train_ds, self.val_ds = random_split(self.train_ds, [0.8, 0.2], 
                                                       generator=torch.Generator().manual_seed(123))
-        if stage == "test" or stage == "predict":
+        if stage == "test":
             self.test_ds = self.test_ds
+        
+        if stage == "predict":
+            self.predict_ds = self.predict_ds
         
     def train_dataloader(self):
         return DataLoader(self.train_ds, collate_fn=self.collator, batch_size=self.batch_size, shuffle=True,
@@ -37,7 +41,7 @@ class EsmDataModule(L.LightningDataModule):
                         num_workers = 2)
 
     def predict_dataloader(self):
-        return DataLoader(self.test_ds, collate_fn=self.collator, batch_size=self.batch_size,
+        return DataLoader(self.predict_ds, batch_size=1,
                         num_workers = 2)
 
 
