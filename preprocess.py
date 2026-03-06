@@ -114,7 +114,10 @@ def create_aggregated_windows(df: pl.LazyFrame, window_sizes: list[int], has_ove
                                         pl.col('attention_mask')
                                         ])
     )
-    return pl.concat([temp_df, create_multiple_windows(df, window_sizes, has_overlap)])
+    temp_df = pl.concat([temp_df, create_multiple_windows(df, window_sizes, has_overlap)])
+    # remove duplicates
+    temp_df = temp_df.unique(['id', 'asym_id','sequence', 'label', 'index'])
+    return temp_df
 
 
 
