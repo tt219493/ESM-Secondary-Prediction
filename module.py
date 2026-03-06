@@ -71,7 +71,7 @@ class EsmForSecondaryStructure(L.LightningModule):
         batch[self.input_key],
         attention_mask=batch[self.mask_key],
     )
-    return outputs[self.output_key] # return logits
+    return outputs
 
   def training_step(self, batch, batch_idx):
     outputs = self.model(
