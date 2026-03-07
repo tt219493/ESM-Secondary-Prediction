@@ -32,6 +32,19 @@ class EsmForSecondaryStructure(L.LightningModule):
       sd = torch.load(ckpt_path,
                       map_location=device)['state_dict']
       sd = {k[6:] : sd[k] for k in sd.keys()}
+
+      num_pretrained_labels = sd['classifier.bias'].shape[0]
+      diff = num_pretrained_labels - self.num_labels
+
+      if diff > 0:
+      # removes values for labels [0, diff - 1]
+        sd['classifier.bias'] = sd['classifier.bias'][diff:]
+        sd['classifier.weight'] = sd['classifier.weight'][diff:]
+      elif diff < 0:
+      # repeats value for label [C] * diff
+        sd['classifier.bias'] = torch.hstack([sd['classifier.bias'], sd['classifier.bias'][-1].repeat(-diff)])
+        sd['classifier.weight'] = torch.vstack([sd['classifier.weight'], sd['classifier.weight'][-1].repeat(-diff, 1)])
+
       self.model.load_state_dict(sd)
 
     self.num_labels = num_labels
