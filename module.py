@@ -25,7 +25,9 @@ class EsmForSecondaryStructure(L.LightningModule):
     super().__init__()
     self.model = EsmForTokenClassification.from_pretrained(pretrained,
                                                            num_labels=num_labels,
-                                                           dtype="auto").train()
+                                                           dtype="auto",
+                                                           output_hidden_states = True
+                                                           ).train()
     if ckpt_path:
       sd = torch.load(ckpt_path,
                       map_location=device)['state_dict']
@@ -75,16 +77,12 @@ class EsmForSecondaryStructure(L.LightningModule):
     outputs = self.model(
         batch[self.input_key],
         attention_mask=batch[self.mask_key],
+        labels=batch[self.label_key]
     )
-    return outputs[self.output_key] # return logits
+    return outputs 
 
   def training_step(self, batch, batch_idx):
-    outputs = self.model(
-          batch[self.input_key],
-          attention_mask=batch[self.mask_key],
-          labels=batch[self.label_key],
-      )
-
+    outputs = self.forward(batch)
 
     logits = outputs[self.output_key]
     predictions = torch.argmax(logits, 2)
@@ -100,11 +98,7 @@ class EsmForSecondaryStructure(L.LightningModule):
 
 
   def validation_step(self, batch, batch_idx):
-    outputs = self.model(
-        batch[self.input_key],
-        attention_mask=batch[self.mask_key],
-        labels=batch[self.label_key],
-    )
+    outputs = self.forward(batch)
     
     logits = outputs[self.output_key]
     predictions = torch.argmax(logits, 2)
@@ -116,11 +110,7 @@ class EsmForSecondaryStructure(L.LightningModule):
       self.log("val_accuracy", acc, on_step=False, on_epoch=True, prog_bar=True)
 
   def test_step(self, batch, batch_idx):
-    outputs = self.model(
-        batch[self.input_key],
-        attention_mask=batch[self.mask_key],
-        labels=batch[self.label_key],
-    )
+    outputs = self.forward(batch)
 
     logits = outputs[self.output_key]
     predictions = torch.argmax(logits, 2)
@@ -131,23 +121,36 @@ class EsmForSecondaryStructure(L.LightningModule):
       self.log("test_loss", outputs[self.loss_key], on_step=False, on_epoch=True, prog_bar=True)
       self.log("test_accuracy", acc, on_step=False, on_epoch=True, prog_bar=True)
 
-  def predict_step(self, batch, batch_idx):
+  def predict(self, batch):
     with torch.no_grad():
-        outputs = self.model(
-            torch.tensor(batch[self.input_key]).reshape(1, -1).to(device),
-            attention_mask=torch.tensor(batch[self.mask_key]).reshape(1, -1).to(device),
-        )
-        logits = outputs[self.output_key]
-        predictions = torch.argmax(logits, 2)
+      outputs = self.model(
+          torch.tensor(batch[self.input_key]).reshape(1, -1).to(device),
+          attention_mask=torch.tensor(batch[self.mask_key]).reshape(1, -1).to(device),
+      )
+      return outputs
 
-    return {
-       'id' : batch['id'][0],
-       'asym_id' : batch['asym_id'][0],
-       'sequence' : batch['sequence'][0],
-       'index' : torch.tensor(batch['index']).tolist(),
-       'label' : torch.tensor(batch['label']).tolist(),
-       'prediction' : predictions.flatten().tolist()
-    }
+  def predict_step(self, batch, batch_idx):
+    outputs = self.predict(batch)
+    logits = outputs[self.output_key]
+    predictions = torch.argmax(logits, 2)
+
+    return predictions
+  
+  def get_hidden_states(self, batch):
+    hidden_states = self.predict(batch).hidden_states
+    last_layer = hidden_states[-2].squeeze(0).numpy()
+    embeddings = hidden_states[-1].squeeze(0).numpy()
+    return last_layer, embeddings
+
+
+#  {
+#       'id' : batch['id'][0],
+#       'asym_id' : batch['asym_id'][0],
+#       'sequence' : batch['sequence'][0],
+#       'index' : torch.tensor(batch['index']).tolist(),
+#       'label' : torch.tensor(batch['label']).tolist(),
+#       'prediction' : predictions.flatten().tolist()
+#    }
 
 
   def configure_optimizers(self):
