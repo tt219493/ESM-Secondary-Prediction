@@ -34,7 +34,7 @@ class EsmForSecondaryStructure(L.LightningModule):
       sd = {k[6:] : sd[k] for k in sd.keys()}
 
       num_pretrained_labels = sd['classifier.bias'].shape[0]
-      diff = num_pretrained_labels - self.num_labels
+      diff = num_pretrained_labels - num_labels
 
       if diff > 0:
       # removes values for labels [0, diff - 1]
