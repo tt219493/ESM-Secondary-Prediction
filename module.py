@@ -3,6 +3,7 @@ import lightning as L
 import torch
 from torchmetrics.functional import accuracy
 from torch import optim
+import polars as pl
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -21,6 +22,7 @@ class EsmForSecondaryStructure(L.LightningModule):
                mask_key: str = "attention_mask",
                output_key: str = "logits",
                loss_key: str = "loss",
+               create_emb_df: bool = False
                ):
     super().__init__()
     self.model = EsmForTokenClassification.from_pretrained(pretrained,
@@ -61,6 +63,15 @@ class EsmForSecondaryStructure(L.LightningModule):
     self.mask_key = mask_key
     self.output_key = output_key
     self.loss_key = loss_key
+
+    if create_emb_df:
+      self.emb_df =  pl.LazyFrame(schema = {'input_ids' : pl.List(pl.Int64),
+                                            'label' : pl.List(pl.Int64),
+                                            'attention_mask' : pl.List(pl.Int64),
+                                            'embedding' : pl.List(pl.List(pl.Float64))})
+    else:
+      self.emb_df = None
+
 
   def compute_accuracy(self, predictions, labels):
     # if all labels are -100, return acc = None
@@ -134,38 +145,27 @@ class EsmForSecondaryStructure(L.LightningModule):
           attention_mask=batch[self.mask_key],
       )
       return outputs
-
-  def predict_step(self, batch, batch_idx):
-    outputs = self.predict(batch)
-
-    return {
-        'input_ids'      : batch['input_ids'].tolist(),
-        'label'          : batch['label'].tolist(),
-        'attention_mask' : batch['attention_mask'].tolist(),
-        'embedding'      : outputs.hidden_states[-1].squeeze(0).tolist()
-          }
-
-
-    # logits = outputs[self.output_key]
-    # predictions = torch.argmax(logits, 2)
-    # return predictions
-  
+      
   def get_hidden_states(self, batch):
     hidden_states = self.predict(batch).hidden_states
     last_layer = hidden_states[-2].squeeze(0) #.numpy()
     embedding = hidden_states[-1].squeeze(0) #.numpy()
     return last_layer, embedding
 
-
-#  {
-#       'id' : batch['id'][0],
-#       'asym_id' : batch['asym_id'][0],
-#       'sequence' : batch['sequence'][0],
-#       'index' : torch.tensor(batch['index']).tolist(),
-#       'label' : torch.tensor(batch['label']).tolist(),
-#       'prediction' : predictions.flatten().tolist()
-#    }
-
+  def predict_step(self, batch, batch_idx):
+    if self.emb_df is not None:
+      _, embedding = self.get_hidden_states(batch)
+      self.emb_df =  pl.concat([self.emb_df,    
+                                pl.LazyFrame([{'input_ids'      : batch['input_ids'][0].tolist(),
+                                                'label'          : batch['label'][0].tolist(),
+                                                'attention_mask' : batch['attention_mask'][0].tolist(),
+                                                'embedding'      : embedding.tolist()}])
+                                ])
+      return None
+    else:
+      outputs = self.predict(batch)
+      return outputs[self.output_key].argmax(2)
+  
 
   def configure_optimizers(self):
     optimizer = optim.AdamW(self.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay,
