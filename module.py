@@ -64,14 +64,7 @@ class EsmForSecondaryStructure(L.LightningModule):
     self.output_key = output_key
     self.loss_key = loss_key
 
-    if create_emb_df:
-      self.emb_df =  pl.LazyFrame(schema = {'input_ids' : pl.List(pl.Int64),
-                                            'label' : pl.List(pl.Int64),
-                                            'attention_mask' : pl.List(pl.Int64),
-                                            'embedding' : pl.List(pl.List(pl.Float64))})
-    else:
-      self.emb_df = None
-
+    self.create_emb_df = create_emb_df
 
   def compute_accuracy(self, predictions, labels):
     # if all labels are -100, return acc = None
@@ -142,30 +135,32 @@ class EsmForSecondaryStructure(L.LightningModule):
     with torch.no_grad():
       outputs = self.model(
           batch[self.input_key],
-          attention_mask=batch[self.mask_key],
+          attention_mask=batch[self.mask_key]
       )
       return outputs
       
-  def get_hidden_states(self, batch):
-    hidden_states = self.predict(batch).hidden_states
-    last_layer = hidden_states[-2].squeeze(0) #.numpy()
-    embedding = hidden_states[-1].squeeze(0) #.numpy()
-    return last_layer, embedding
-
   def predict_step(self, batch, batch_idx):
-    if self.emb_df is not None:
-      _, embedding = self.get_hidden_states(batch)
-      self.emb_df =  pl.concat([self.emb_df,    
-                                pl.LazyFrame([{'input_ids'      : batch['input_ids'][0].tolist(),
-                                                'label'          : batch['label'][0].tolist(),
-                                                'attention_mask' : batch['attention_mask'][0].tolist(),
-                                                'embedding'      : embedding.tolist()}])
-                                ])
-      return None
+    outputs = self.predict(batch)
+
+    # included here just so progress bar can be seen when creating creating embedding df
+    # currently used to create df for input into other models
+    if self.create_emb_df:
+      embedding = outputs.hidden_state[-1]
+       
+      return pl.LazyFrame([{'input_ids'      : batch['input_ids'].tolist(),
+                            'label'          : batch['label'].tolist(),
+                            'attention_mask' : batch['attention_mask'].tolist(),
+                            'embedding'      : embedding.tolist()}])                              
     else:
-      outputs = self.predict(batch)
       return outputs[self.output_key].argmax(2)
-  
+      
+  def get_embedding(self, batch):
+    # use to directly feed embeddings to other models
+    outputs = self.predict(batch)
+    outputs['input_ids'] = batch['input_ids']
+    outputs['label'] = batch['label']
+
+    return outputs
 
   def configure_optimizers(self):
     optimizer = optim.AdamW(self.parameters(), lr=self.learning_rate, weight_decay=self.weight_decay,
