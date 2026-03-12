@@ -31,6 +31,7 @@ class EsmForSecondaryStructure(L.LightningModule):
     super().__init__()
     self.model = EsmForTokenClassification.from_pretrained(pretrained,
                                                            num_labels=num_labels,
+                                                           low_cpu_mem_usage=True,
                                                            dtype="auto",
                                                            output_hidden_states = True
                                                            ).train()
