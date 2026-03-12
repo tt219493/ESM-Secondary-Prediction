@@ -183,16 +183,16 @@ def process_benchmark(df, label_mapping):
 
     return temp_df
 
-def tokenize_and_label(examples):
-  tokenized_inputs = tokenizer(examples["sequence"],
-                                return_tensors="pt",
-                                add_special_tokens=False,
-                                padding=False)
-  tokenized_inputs["input_ids"] = tokenized_inputs["input_ids"][0]
-  tokenized_inputs["attention_mask"] = tokenized_inputs["attention_mask"][0]
-  return tokenized_inputs
-
-def tokenize_benchmark(df, label_mapping, tokenizer = AutoTokenizer.from_pretrained("facebook/esm2_t6_8M_UR50D")):
+def tokenize_benchmark(df, label_mapping, tokenizer = AutoTokenizer.from_pretrained("facebook/esm2_t6_8M_UR50D")):    
+    def tokenize_and_label(examples):
+        tokenized_inputs = tokenizer(examples["sequence"],
+                                        return_tensors="pt",
+                                        add_special_tokens=False,
+                                        padding=False)
+        tokenized_inputs["input_ids"] = tokenized_inputs["input_ids"][0]
+        tokenized_inputs["attention_mask"] = tokenized_inputs["attention_mask"][0]
+        return tokenized_inputs
+    
     ds = Dataset.from_polars(process_benchmark(df, label_mapping).collect())
     tokenized_ds = ds.map(tokenize_and_label, batched=False)
     tokenized_df = Dataset.to_polars(tokenized_ds).lazy()
