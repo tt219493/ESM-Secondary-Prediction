@@ -1,4 +1,7 @@
 import polars as pl
+from transformers import AutoTokenizer
+from datasets import Dataset
+
 
 def create_sliding_windows(df : pl.LazyFrame, window_size: int, step_size = None) -> pl.LazyFrame:
   '''
@@ -153,4 +156,52 @@ def train_val_split(df, n: int, offset: int=0):
     return train_split, val_split
 
 
+def process_benchmark(df, label_mapping):
+    temp_df = (df
+                .select(['input', ' dssp8'])
+                .with_columns(
+                    sequence = pl.col('input').str.split(by=" ").list.join(separator=""),
+                    secondary_structure = pl.col(' dssp8').str.split(by=" "),
+                )
+                .with_columns(
+                    length = pl.col('sequence').str.len_chars()
+                ).with_columns(
+                    index = pl.int_ranges(1, pl.col('length') + 1)
+                )
+                .drop(['input', ' dssp8', 'length'])
+              )
+    
+    temp_df = ( 
+                temp_df
+                    .unique(['sequence', 'secondary_structure']) #remove duplicates
+                    .explode('secondary_structure', 'index')
+                    .with_columns(label = pl.col("secondary_structure").replace_strict(label_mapping))
+                    .cast({'label' : pl.Int64})
+                    .sort('sequence', 'index')
+                    .group_by('sequence').agg('secondary_structure', 'index', 'label')      
+                ).join(temp_df.select('sequence'), on='sequence') #add duplicates back
 
+    return temp_df
+
+def tokenize_and_label(examples):
+  tokenized_inputs = tokenizer(examples["sequence"],
+                                return_tensors="pt",
+                                add_special_tokens=False,
+                                padding=False)
+  tokenized_inputs["input_ids"] = tokenized_inputs["input_ids"][0]
+  tokenized_inputs["attention_mask"] = tokenized_inputs["attention_mask"][0]
+  return tokenized_inputs
+
+def tokenize_benchmark(df, label_mapping, tokenizer = AutoTokenizer.from_pretrained("facebook/esm2_t6_8M_UR50D")):
+    ds = Dataset.from_polars(process_benchmark(df, label_mapping).collect())
+    tokenized_ds = ds.map(tokenize_and_label, batched=False)
+    tokenized_df = Dataset.to_polars(tokenized_ds).lazy()
+    return tokenized_df
+
+def remove_overlapping_seq(df, df_list):
+    temp_df = df
+    for test_df in df_list:
+        temp_df = (temp_df.join(test_df.select('sequence'), on=['sequence'], how='full')
+                          .filter(pl.col('sequence_right').is_null()).drop('sequence_right')
+                  )
+    return temp_df
