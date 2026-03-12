@@ -183,7 +183,7 @@ def process_benchmark(df, label_mapping):
 
     return temp_df
 
-def tokenize_benchmark(df, label_mapping, tokenizer = AutoTokenizer.from_pretrained("facebook/esm2_t6_8M_UR50D")):    
+def tokenize_benchmark(df, label_mapping, tokenizer):    
     def tokenize_and_label(examples):
         tokenized_inputs = tokenizer(examples["sequence"],
                                         return_tensors="pt",

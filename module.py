@@ -227,7 +227,7 @@ class EsmForSecondaryStructure(L.LightningModule):
     else:
         outputs = self.predict(batch)
         logits = outputs[self.output_key]
-        embedding = outputs.hidden_state[-1]
+        embedding = outputs['hidden_states'][-1]
 
 
     # included here just so progress bar can be seen when creating creating embedding df
