@@ -256,7 +256,7 @@ class EsmForSecondaryStructure(L.LightningModule):
     if self.create_emb_df:
       return pl.LazyFrame([{'input_ids'      : batch['input_ids'].tolist(),
                             'label'          : batch['label'].tolist(),
-                            'attention_mask' : batch['attention_mask'].tolist(),
+                            #'attention_mask' : batch['attention_mask'].tolist(),
                             'embedding'      : embedding.tolist()}])
     else:
       predictions = logits.argmax(2)
