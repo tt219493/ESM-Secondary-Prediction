@@ -1,6 +1,8 @@
 Secondary Structure Prediction (Q8) Using ESM Fine-Tuning
 ===
-Wraps ESM Model from HuggingFace in Pytorch Lightning Module and fine-tunes for per-residue secondary structure prediction. Additionally, allows for embeddings to be outputted and used in other architectures.
+Wraps ESM Model from HuggingFace in Pytorch Lightning Module and fine-tunes for per-residue secondary structure prediction. Additionally, allows for embeddings to be outputted and used in other architectures.  
+
+Combining embeddings, dimensionality reduction through an encoder, and gradient boosting models resulted in ~70% average accuracy across the benchmark datasets, comparable to other state-of-the-art models, as well as improving prediction speeds over these models.
 
 **Original Project from COM SCI C121 @ UCLA**
 ___
@@ -98,7 +100,7 @@ Trained on `NetSurf` training data only.
 
 While other prediction accuracies are similar to the ESM or Encoder models, the accuracy for CB513 drastically increases by using Gradient Boosting on the embeddings.
 ___
-### Overall Results & Comparisons to State-of-the-Art Models (Q8)
+## Overall Results & Comparisons to State-of-the-Art Models (Q8)
 Data from [4] & [9]  
 | Model            | CASP12  | CB513   | NEW364  | TS115   |  
 | --------         | ------- | ------- | ------- | ------- |
