@@ -95,6 +95,8 @@ Trained on `NetSurf` training data only.
 | XGBM            | 67.8    |  73.8   | 71.2    |  74.3   |
 | LGBM            | 67.6    |  73.8   | 71.1    |  74.2   |
 | Ensemble        | 67.7    |  73.8   | 71.2    |  74.3   |
+
+While other prediction accuracies are similar to the ESM or Encoder models, the accuracy for CB513 drastically increases by using Gradient Boosting on the embeddings.
 ___
 ### Overall Results & Comparisons to State-of-the-Art Models (Q8)
 Data from [4] & [9]  
