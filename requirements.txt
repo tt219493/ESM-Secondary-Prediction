@@ -1,0 +1,7 @@
+polars
+torch
+lightning
+transformers
+datasets
+torchmetrics
+matplotlib
