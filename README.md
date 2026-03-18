@@ -1,6 +1,6 @@
-Secondary Structure Prediction (Q8) Using ESM 
+Secondary Structure Prediction (Q8) Using ESM Fine-Tuning
 ===
-Wraps ESM Model from HuggingFace in Pytorch Lightning Module and fine-tunes for per-residue secondary structure prediction
+Wraps ESM Model from HuggingFace in Pytorch Lightning Module and fine-tunes for per-residue secondary structure prediction. Additionally, allows for embeddings to be outputted and used in other architectures.
 
 **Original Project from COM SCI C121 @ UCLA**
 ___
